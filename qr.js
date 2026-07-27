@@ -151,9 +151,9 @@ router.get('/', async (req, res) => {
                             // Send video thumbnail with caption
                             await sock.sendMessage(userJid, {
                                 image: { url: 'https://camo.githubusercontent.com/2b7141e4940627f2733c6f181d2fbd338077b4684394ab6c3cff2f11d4fe7491/68747470733a2f2f66696c65732e636174626f782e6d6f652f33376473376a2e706e67' },
-                                caption: `🎬 *Legacy MD V2.0.0 !*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n\n📺 Contact Us On: 260760576801`
+                                caption: `⚡ *Legacy MD V2.0.0 !*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n\n🫂 Contact Us On: 260760576801`
                             });
-                            console.log("🎬 Bot details sent successfully");
+                            console.log("⚡ Bot details sent successfully");
                             
                             // Send warning message
                             await sock.sendMessage(userJid, {
