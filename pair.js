@@ -17,6 +17,12 @@ const router = express.Router();
 
 const sessionsDir = path.join(process.cwd(), 'sessions');
 
+// mega.js upload
+const { upload } = require('./mega');
+function removeFile(FilePath) {
+    if (!fs.existsSync(FilePath)) return false;
+    fs.rmSync(FilePath, { recursive: true, force: true });
+
 // Make sure the sessions directory exists
 if (!fs.existsSync(sessionsDir)) {
     fs.mkdirSync(sessionsDir, {
