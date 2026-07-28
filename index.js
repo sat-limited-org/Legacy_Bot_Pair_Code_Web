@@ -34,7 +34,7 @@ app.use('/pair', pairRouter);
 app.use('/qr', qrRouter);
 
 app.listen(PORT, () => {
-    console.log(`YoutTube: @SimbarasheMC\n\nGitHub: @sat-limited-org\n\nServer running on http://localhost:${PORT}`);
+    console.log(`YoutTube: @SimbarasheMC\n\nGitHub: @sat-limited-org\n\nOrganisation: SAT Limited Organization\n\nServer running on http://localhost:${PORT}`);
 });
 
 export default app;
