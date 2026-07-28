@@ -1,314 +1,187 @@
 import express from 'express';
 import fs from 'fs';
-import path from 'path';
 import pino from 'pino';
-
-import {
-    makeWASocket,
-    useMultiFileAuthState,
-    delay,
-    makeCacheableSignalKeyStore,
-    Browsers
-} from '@whiskeysockets/baileys';
-
+import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pn from 'awesome-phonenumber';
 
 const router = express.Router();
-
-const sessionsDir = path.join(process.cwd(), 'sessions');
-
-// mega.js upload
 const { upload } = require('./mega');
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
     fs.rmSync(FilePath, { recursive: true, force: true });
 
-// Make sure the sessions directory exists
-if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir, {
-        recursive: true
-    });
-}
-
-// Remove a directory safely
-function removeFile(filePath) {
+// Ensure the session directory exists
+function removeFile(FilePath) {
     try {
-        if (fs.existsSync(filePath)) {
-            fs.rmSync(filePath, {
-                recursive: true,
-                force: true
-            });
-
-            console.log(`🧹 Removed session: ${filePath}`);
-        }
-    } catch (error) {
-        console.error('❌ Error removing session:', error);
+        if (!fs.existsSync(FilePath)) return false;
+        fs.rmSync(FilePath, { recursive: true, force: true });
+    } catch (e) {
+        console.error('Error removing file:', e);
     }
 }
-
-// Track active pairing sessions
-const activeSessions = new Map();
-
-/*
-|--------------------------------------------------------------------------
-| PAIRING CODE ROUTE
-|--------------------------------------------------------------------------
-*/
 
 router.get('/', async (req, res) => {
     let num = req.query.number;
+    let dirs = './' + (num || `session`);
 
-    // Check if number was provided
-    if (!num) {
-        return res.status(400).json({
-            error: 'Phone number is required'
-        });
-    }
+    // Remove existing session if present
+    await removeFile(dirs);
 
-    // Remove all non-numeric characters
-    num = String(num).replace(/\D/g, '');
+    // Clean the phone number - remove any non-digit characters
+    num = num.replace(/[^0-9]/g, '');
 
-    // Validate phone number
+    // Validate the phone number using awesome-phonenumber
     const phone = pn('+' + num);
-
     if (!phone.isValid()) {
-        return res.status(400).json({
-            error: 'Invalid phone number. Use your full international number without + or spaces.'
-        });
+        if (!res.headersSent) {
+            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.' });
+        }
+        return;
     }
+    // Use the international number format (E.164, without '+')
+    num = phone.getNumber('e164').replace('+', '');
 
-    // Convert to proper international format
-    num = phone
-        .getNumber('e164')
-        .replace('+', '');
+    async function initiateSession() {
+        const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
-    console.log(`📱 Pairing request received for: ${num}`);
+        try {
+            const { version, isLatest } = await fetchLatestBaileysVersion();
+            let Legacy = makeWASocket({
+                version,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+                },
+                printQRInTerminal: false,
+                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
+                browser: Browsers.windows('Chrome'),
+                markOnlineOnConnect: false,
+                generateHighQualityLinkPreview: false,
+                defaultQueryTimeoutMs: 60000,
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                retryRequestDelayMs: 250,
+                maxRetries: 5,
+            });
 
-    // Prevent duplicate pairing sessions
-    if (activeSessions.has(num)) {
-        return res.status(429).json({
-            error: 'A pairing session is already active for this number. Please wait or try again later.'
-        });
-    }
-
-    const sessionDir = path.join(
-        sessionsDir,
-        num
-    );
-
-    // Remove any old session
-    removeFile(sessionDir);
-
-    activeSessions.set(num, true);
-
-    let Legacy;
-
-    try {
-        /*
-        |--------------------------------------------------------------------------
-        | AUTH STATE
-        |--------------------------------------------------------------------------
-        */
-
-        const {
-            state,
-            saveCreds
-        } = await useMultiFileAuthState(sessionDir);
-
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE WHATSAPP SOCKET
-        |--------------------------------------------------------------------------
-        */
-
-        Legacy = makeWASocket({
-            auth: {
-                creds: state.creds,
-
-                keys: makeCacheableSignalKeyStore(
-                    state.keys,
-
-                    pino({
-                        level: 'info'
-                    })
-                )
-            },
-
-            logger: pino({
-                level: 'info'
-            }),
-
-            printQRInTerminal: false,
-
-            browser: Browsers.ubuntu('Chrome'),
-
-            markOnlineOnConnect: false,
-
-            generateHighQualityLinkPreview: false,
-
-            connectTimeoutMs: 60000,
-
-            keepAliveIntervalMs: 30000,
-
-            defaultQueryTimeoutMs: 60000
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | SAVE CREDENTIALS
-        |--------------------------------------------------------------------------
-        */
-
-        Legacy.ev.on(
-            'creds.update',
-            saveCreds
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | CONNECTION UPDATE
-        |--------------------------------------------------------------------------
-        */
-
-        Legacy.ev.on(
-            'connection.update',
-
-            async (update) => {
-                const {
-                    connection,
-                    lastDisconnect,
-                    isNewLogin
-                } = update;
-
-                if (isNewLogin) {
-                    console.log(
-                        `🔐 New WhatsApp login detected for ${num}`
-                    );
-                }
-
-                if (connection === 'connecting') {
-                    console.log(
-                        `🔄 Connecting WhatsApp for ${num}...`
-                    );
-                }
+            Legacy.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, isNewLogin, isOnline } = update;
 
                 if (connection === 'open') {
-                    console.log(
-                        `✅ WhatsApp connected successfully for ${num}`
-                    );
+                    console.log("✅ Connected successfully!");
+                    console.log("📱 Sending session file to user...");
+                    
+                    try {
+                        const sessionLegacy = fs.readFileSync(dirs + '/creds.json');
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | IMPORTANT
-                    |--------------------------------------------------------------------------
-                    | Do not delete the session here while testing.
-                    |
-                    | The credentials must remain available.
-                    |--------------------------------------------------------------------------
-                    */
+                        // Send session file to user
+                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
+                        await Legacy.sendMessage(userJid, {
+                            document: sessionLegacy,
+                            mimetype: 'application/json',
+                            fileName: 'creds.json'
+                        });
+                        console.log("📄 Session file sent successfully");
 
-                    activeSessions.delete(num);
+                        // Send video thumbnail with caption
+                        await Legacy.sendMessage(usellrJid, {
+                            image: { url: 'https://camo.githubusercontent.com/2b7141e4940627f2733c6f181d2fbd338077b4684394ab6c3cff2f11d4fe7491/68747470733a2f2f66696c65732e636174626f782e6d6f652f33376473376a2e706e67' },
+                            caption: `🎬 *Legacy MD V2.0.0 !*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n\n📺 Contact Us On: 260760576801`
+                        });
+                        console.log("🎬 Bot details sent successfully");
+
+                        // Send warning message
+                        await Legacy.sendMessage(userJid, {
+                            text: `⚠️Do not share this file with anybody⚠️\n 
+┌┤✑  Thanks for using Legacy MD Bot
+│└────────────┈ ⳹        
+│©2026 SAT Limited 
+└─────────────────┈ ⳹\n\n`
+                        });
+                        console.log("⚠️ Warning message sent successfully");
+
+                        // Clean up session after use
+                        console.log("🧹 Cleaning up session...");
+                        await delay(1000);
+                        removeFile(dirs);
+                        console.log("✅ Session cleaned up successfully");
+                        console.log("🎉 Process completed successfully!");
+                        // Do not exit the process, just finish gracefully
+                    } catch (error) {
+                        console.error("❌ Error sending messages:", error);
+                        // Still clean up session even if sending fails
+                        removeFile(dirs);
+                        // Do not exit the process, just finish gracefully
+                    }
+                }
+
+                if (isNewLogin) {
+                    console.log("🔐 New login via pair code");
+                }
+
+                if (isOnline) {
+                    console.log("📶 Client is online");
                 }
 
                 if (connection === 'close') {
-                    const statusCode =
-                        lastDisconnect
-                            ?.error
-                            ?.output
-                            ?.statusCode;
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
 
-                    console.log(
-                        `❌ WhatsApp connection closed for ${num}`
-                    );
+                    if (statusCode === 401) {
+                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
+                    } else {
+                        console.log("🔁 Connection closed — restarting...");
+                        initiateSession();
+                    }
+                }
+            });
 
-                    console.log(
-                        '📊 Disconnect status:',
-                        statusCode
-                    );
+            if (!Legacy.authState.creds.registered) {
+                await delay(3000); // Wait 3 seconds before requesting pairing code
+                num = num.replace(/[^\d+]/g, '');
+                if (num.startsWith('+')) num = num.substring(1);
 
-                    console.log(
-                        '🔍 Full disconnect error:',
-                        lastDisconnect?.error
-                    );
-
-                    activeSessions.delete(num);
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | IMPORTANT
-                    |--------------------------------------------------------------------------
-                    | Do NOT automatically call initiateSession()
-                    | here during pairing.
-                    |--------------------------------------------------------------------------
-                    */
+                try {
+                    let code = await Legacy.requestPairingCode(num);
+                    code = code?.match(/.{1,4}/g)?.join('-') || code;
+                    if (!res.headersSent) {
+                        console.log({ num, code });
+                        await res.send({ code });
+                    }
+                } catch (error) {
+                    console.error('Error requesting pairing code:', error);
+                    if (!res.headersSent) {
+                        res.status(503).send({ code: 'Failed to get pairing code. Please check your phone number and try again.' });
+                    }
                 }
             }
-        );
 
-        /*
-        |--------------------------------------------------------------------------
-        | GENERATE PAIRING CODE
-        |--------------------------------------------------------------------------
-        */
-
-        if (!state.creds.registered) {
-            console.log(
-                `⏳ Waiting before requesting pairing code for ${num}...`
-            );
-
-            await delay(3000);
-
-            let code =
-                await Legacy.requestPairingCode(num);
-
-            // Format:
-            // M1NMQ2Z3
-            //
-            // Into:
-            // M1NM-Q2Z3
-
-            code =
-                code
-                    ?.match(/.{1,4}/g)
-                    ?.join('-') || code;
-
-            console.log(
-                `🔑 Pairing code generated for ${num}: ${code}`
-            );
-
-            activeSessions.delete(num);
-
-            return res.json({
-                success: true,
-                code
-            });
-        }
-
-        activeSessions.delete(num);
-
-        return res.status(400).json({
-            error: 'This session is already registered.'
-        });
-
-    } catch (error) {
-        console.error(
-            '❌ Pairing error:',
-            error
-        );
-
-        activeSessions.delete(num);
-
-        // Clean up failed session
-        removeFile(sessionDir);
-
-        if (!res.headersSent) {
-            return res.status(500).json({
-                success: false,
-                error: 'Failed to generate pairing code.',
-                details: error.message
-            });
+            Legacy.ev.on('creds.update', saveCreds);
+        } catch (err) {
+            console.error('Error initializing session:', err);
+            if (!res.headersSent) {
+                res.status(503).send({ code: 'Service Unavailable' });
+            }
         }
     }
+
+    await initiateSession();
+});
+
+// Global uncaught exception handler
+process.on('uncaughtException', (err) => {
+    let e = String(err);
+    if (e.includes("conflict")) return;
+    if (e.includes("not-authorized")) return;
+    if (e.includes("Socket connection timeout")) return;
+    if (e.includes("rate-overlimit")) return;
+    if (e.includes("Connection Closed")) return;
+    if (e.includes("Timed Out")) return;
+    if (e.includes("Value not found")) return;
+    if (e.includes("Stream Errored")) return;
+    if (e.includes("Stream Errored (restart required)")) return;
+    if (e.includes("statusCode: 515")) return;
+    if (e.includes("statusCode: 503")) return;
+    console.log('Caught exception: ', err);
 });
 
 export default router;
