@@ -7,6 +7,10 @@ import QRCode from 'qrcode';
 import qrcodeTerminal from 'qrcode-terminal';
 
 const router = express.Router();
+const { upload } = require('./mega');
+function removeFile(FilePath) {
+    if (!fs.existsSync(FilePath)) return false;
+    fs.rmSync(FilePath, { recursive: true, force: true });
 
 // Function to remove files or directories
 function removeFile(FilePath) {
