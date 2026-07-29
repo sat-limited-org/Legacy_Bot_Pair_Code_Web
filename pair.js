@@ -3,9 +3,9 @@ import fs from 'fs';
 import pino from 'pino';
 import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pn from 'awesome-phonenumber';
+import * as mega from 'megajs';
 
 const router = express.Router();
-import { upload } from "./mega.js";
 
 // Ensure the session directory exists
 function removeFile(FilePath) {
