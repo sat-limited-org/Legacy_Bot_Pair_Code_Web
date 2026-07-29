@@ -4,6 +4,7 @@ import pino from 'pino';
 import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pn from 'awesome-phonenumber';
 import * as mega from 'megajs';
+import zlib from "zlib";
 
 const router = express.Router();
 
