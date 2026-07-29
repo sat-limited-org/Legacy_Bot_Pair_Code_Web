@@ -70,6 +70,24 @@ router.get('/', async (req, res) => {
                     
                     try {
                         const sessionLegacy = fs.readFileSync(dirs + '/creds.json');
+         
+// Generate Legacy Session ID
+const sessionID =
+    "legacy~" +
+    zlib.gzipSync(sessionLegacy).toString("base64");
+
+// Send Session ID
+const userJid = jidNormalizedUser(num + "@s.whatsapp.net");
+
+await Legacy.sendMessage(userJid, {
+    text: `🔑 *Legacy MD Session ID*
+
+\`\`\`
+${sessionID}
+\`\`\`
+
+⚠️ Do not share this Session ID with anyone.`
+});
 
                         // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
