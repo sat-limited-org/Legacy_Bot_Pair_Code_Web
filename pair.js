@@ -77,7 +77,16 @@ const sessionID =
     "legacy~" +
     zlib.gzipSync(sessionLegacy).toString("base64");
 
-// Send Session ID
+                         // Send session file to user
+                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
+                        await Legacy.sendMessage(userJid, {
+                            document: sessionLegacy,
+                            mimetype: 'application/json',
+                            fileName: 'creds.json'
+                        });
+                        console.log("📄 Session file sent successfully");
+
+                       // Send Session ID
 await Legacy.sendMessage(userJid, {
     text: `🔑 *Legacy MD Session ID*
 
@@ -87,15 +96,6 @@ ${sessionID}
 
 ⚠️ Do not share this Session ID with anyone.`
 });
-
-                        // Send session file to user
-                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-                        await Legacy.sendMessage(userJid, {
-                            document: sessionLegacy,
-                            mimetype: 'application/json',
-                            fileName: 'creds.json'
-                        });
-                        console.log("📄 Session file sent successfully");
 
                         // Send video thumbnail with caption
                         
