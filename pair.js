@@ -5,10 +5,7 @@ import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore
 import pn from 'awesome-phonenumber';
 
 const router = express.Router();
-const { upload } = require('./mega');
-function removeFile(FilePath) {
-    if (!fs.existsSync(FilePath)) return false;
-    fs.rmSync(FilePath, { recursive: true, force: true });
+import { upload } from "./mega.js";
 
 // Ensure the session directory exists
 function removeFile(FilePath) {
