@@ -23,7 +23,9 @@ href="https://chat.whatsapp.com/Iq349dQeg0fA6XepNuIe8T">
 ---
 
 <div align="center">
+
 **© SAT Limited | Legacy MD**
 
 <div align="center">
+
 [![Terms Of Service](https://img.shields.io/badge/Terms%20Of%20Service-black?style=for-the-badge)](https://sat-limited.vercel.app/tos.html)
