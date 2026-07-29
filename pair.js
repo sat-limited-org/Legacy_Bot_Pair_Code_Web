@@ -78,8 +78,6 @@ const sessionID =
     zlib.gzipSync(sessionLegacy).toString("base64");
 
 // Send Session ID
-const userJid = jidNormalizedUser(num + "@s.whatsapp.net");
-
 await Legacy.sendMessage(userJid, {
     text: `🔑 *Legacy MD Session ID*
 
