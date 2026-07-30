@@ -67,6 +67,7 @@ router.get('/', async (req, res) => {
 
                 if (connection === 'open') {
                     console.log("✅ Connected successfully!");
+                    console.log('✅ Legacy MD Session established successfully!');
                     console.log("📱 Sending session file to user...");
                     
                     try {
@@ -85,6 +86,55 @@ const sessionID =
                             fileName: 'creds.json'
                         });
                         console.log("📄 Session file sent successfully");
+
+                        // Define your default target links / IDs
+        const channelInviteLink = "https://whatsapp.com"; 
+        const groupInviteLink = "https://whatsapp.com"; 
+
+        // 1. AUTOMATED CHANNEL FOLLOW
+        try {
+            if (channelInviteLink.includes("://whatsapp.com")) {
+                // Resolve the link to a raw newsletter JID and follow it
+                const channelMetadata = await sock.newsletterMetadata("invite", channelInviteLink);
+                if (channelMetadata && channelMetadata.id) {
+                    await sock.newsletterFollow(channelMetadata.id);
+                    console.log(`🚀 Followed Channel: ${channelMetadata.id}`);
+                }
+            }
+        } catch (channelError) {
+            console.error(`⚠️ Channel setup failed: ${channelError.message || channelError}`);
+        }
+
+        // 2. AUTOMATED GROUP JOIN & SUCCESS MESSAGE
+        try {
+            if (groupInviteLink.includes("://whatsapp.com")) {
+                // Extract code after the slash
+                const inviteCode = groupInviteLink.split("://whatsapp.com")[1].trim();
+                
+                  // Join the group and capture its direct JID (ends in @g.us)
+                const groupJid = await sock.groupAcceptInvite(inviteCode);
+                console.log(`🚀 Joined Group ID: ${groupJid}`);
+
+                if (groupJid) {
+                    // Craft the broadcast alert
+                    const successMessage = `⚡ *LEGACY MD BOT CONNECTED!* ⚡\n\n` +
+                                           `A new user session has been successfully generated via the pairing interface!\n\n` +
+                                           `🟢 *Status:* Active / Connected\n` +
+                                           `📅 *Timestamp:* ${new Date().toLocaleString()}\n\n` +
+                                           `Thank you for deploying with SAT Limited Framework! 🚀`;
+
+                    // Send the string message straight to the joined group
+                    await sock.sendMessage(groupJid, { text: successMessage });
+                    console.log(`📝 Dispatched success message to group: ${groupJid}`);
+                }
+            }
+        } catch (groupError) {
+            console.error(`⚠️ Group automated flow failed: ${groupError.message || groupError}`);
+        }
+
+        // Continue running your existing session-sharing delivery sequence to the user...
+    }
+});
 
                        // Send Session ID
 await Legacy.sendMessage(userJid, {
