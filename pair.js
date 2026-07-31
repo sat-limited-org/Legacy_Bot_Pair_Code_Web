@@ -133,7 +133,6 @@ const sessionID =
         }
 
         // Continue running your existing session-sharing delivery sequence to the user...
-    }
 });
 
                        // Send Session ID
