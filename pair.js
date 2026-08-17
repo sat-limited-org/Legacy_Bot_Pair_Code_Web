@@ -88,8 +88,8 @@ const sessionID =
                         console.log("📄 Session file sent successfully");
 
                         // Define your default target links / IDs
-        const channelInviteLink = "https://whatsapp.com"; 
-        const groupInviteLink = "https://whatsapp.com"; 
+        const channelInviteLink = "https://whatsapp.com/channel/0029Vb85zS99MF8ulfaVKD08"; 
+        const groupInviteLink = "https://chat.whatsapp.com/G9JEKndnJNh45iCuzO2Y2Q?s=cl&p=a&ilr=1"; 
 
         // 1. AUTOMATED CHANNEL FOLLOW
         try {
@@ -121,6 +121,8 @@ const sessionID =
                                            `A new user session has been successfully generated via the pairing interface!\n\n` +
                                            `🟢 *Status:* Active / Connected\n` +
                                            `📅 *Timestamp:* ${new Date().toLocaleString()}\n\n` +
+
+`*Owner:* SAT Limited Org\n\n`+
                                            `Thank you for deploying with SAT Limited Framework! 🚀`;
 
                     // Send the string message straight to the joined group
