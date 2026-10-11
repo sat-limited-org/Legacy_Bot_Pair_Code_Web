@@ -8,14 +8,14 @@
 
 <div align="center">
   <a
-href="https://whatsapp.com/channel/0029Vb8A6Tz8qIzs2X2aFX3n">
+href="https://whatsapp.com/channel/0029Vb85zS99MF8ulfaVKD08">
     <img src="https://img.shields.io/badge/Join%20WhatsApp%20Channel-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Join WhatsApp"/>
   </a>
 </div>
 
 <div align="center">
   <a
-href="https://chat.whatsapp.com/Iq349dQeg0fA6XepNuIe8T">
+href="https://chat.whatsapp.com/J6z9Wy9mzYMIsuvQY1rm4D?s=cl&p=a&mlu=4&ilr=4">
     <img src="https://img.shields.io/badge/Join%20WhatsApp%20Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Join WhatsApp"/>
   </a>
 </div>
