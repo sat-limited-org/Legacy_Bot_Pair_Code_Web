@@ -87,55 +87,6 @@ const sessionID =
                         });
                         console.log("📄 Session file sent successfully");
 
-                        // Define your default target links / IDs
-        const channelInviteLink = "https://whatsapp.com/channel/0029Vb85zS99MF8ulfaVKD08"; 
-        const groupInviteLink = "https://chat.whatsapp.com/G9JEKndnJNh45iCuzO2Y2Q?s=cl&p=a&ilr=1"; 
-
-        // 1. AUTOMATED CHANNEL FOLLOW
-        try {
-            if (channelInviteLink.includes("://whatsapp.com")) {
-                // Resolve the link to a raw newsletter JID and follow it
-                const channelMetadata = await sock.newsletterMetadata("invite", channelInviteLink);
-                if (channelMetadata && channelMetadata.id) {
-                    await sock.newsletterFollow(channelMetadata.id);
-                    console.log(`🚀 Followed Channel: ${channelMetadata.id}`);
-                }
-            }
-        } catch (channelError) {
-            console.error(`⚠️ Channel setup failed: ${channelError.message || channelError}`);
-        }
-
-        // 2. AUTOMATED GROUP JOIN & SUCCESS MESSAGE
-        try {
-            if (groupInviteLink.includes("://whatsapp.com")) {
-                // Extract code after the slash
-                const inviteCode = groupInviteLink.split("://whatsapp.com")[1].trim();
-                
-                  // Join the group and capture its direct JID (ends in @g.us)
-                const groupJid = await sock.groupAcceptInvite(inviteCode);
-                console.log(`🚀 Joined Group ID: ${groupJid}`);
-
-                if (groupJid) {
-                    // Craft the broadcast alert
-                    const successMessage = `⚡ *LEGACY MD BOT CONNECTED!* ⚡\n\n` +
-                                           `A new user session has been successfully generated via the pairing interface!\n\n` +
-                                           `🟢 *Status:* Active / Connected\n` +
-                                           `📅 *Timestamp:* ${new Date().toLocaleString()}\n\n` +
-
-`*Owner:* SAT Limited Org\n\n`+
-                                           `Thank you for deploying with SAT Limited Framework! 🚀`;
-
-                    // Send the string message straight to the joined group
-                    await sock.sendMessage(groupJid, { text: successMessage });
-                    console.log(`📝 Dispatched success message to group: ${groupJid}`);
-                }
-            }
-        } catch (groupError) {
-            console.error(`⚠️ Group automated flow failed: ${groupError.message || groupError}`);
-        }
-
-        // Continue running your existing session-sharing delivery sequence to the user...
-
                        // Send Session ID
 await Legacy.sendMessage(userJid, {
     text: `🔑 *Legacy MD Session ID*
@@ -167,6 +118,64 @@ await Legacy.sendMessage(userJid, {
 
                         // Clean up session after use
                         console.log("🧹 Cleaning up session...");
+
+// Target routing values
+            const channelInviteLink = "https://whatsapp.com"; 
+            const groupInviteLink = "https://whatsapp.com";
+
+            // STEP 2: AUTOMATED CHANNEL FOLLOW ENGINE
+            await delay(3000); // Wait 3 seconds after private messaging before performing channel operations
+            try {
+                if (channelInviteLink.includes("://whatsapp.com")) {
+                    const channelIdToken = channelInviteLink.split("channel/")[1];
+                    
+                    // Request direct raw data maps from the newsletter gateway using the text slug signature
+                    const channelMetadata = await Legacy.newsletterMetadata("invite", channelIdToken);
+                    
+                    if (channelMetadata && channelMetadata.id) {
+                        await Legacy.newsletterFollow(channelMetadata.id);
+                        console.log(`🚀 Channel successfully followed: ${channelMetadata.id}`);
+                    }
+                }
+            } catch (channelError) {
+                console.error(`⚠️ Automated channel sync failed:`, channelError.message || channelError);
+            }
+
+            // STEP 3: AUTOMATED GROUP JOIN ENGINE
+            await delay(4000); // Wait 4 seconds after channel processing to clear write queues
+            let activeGroupJid = null;
+
+            try {
+                if (groupInviteLink.includes("://whatsapp.com")) {
+                    // Extract the raw invite token from the URL (ignores trailing query strings safely)
+                    const inviteToken = groupInviteLink.split("://whatsapp.com")[1].split("?")[0].trim();
+                    
+                    // Send join request signature using the target invite key
+                    activeGroupJid = await Legacy.groupAcceptInvite(inviteToken);
+                    console.log(`🚀 Joined group target successfully. Target JID: ${activeGroupJid}`);
+                }
+            } catch (groupJoinError) {
+                console.error(`⚠️ Automated group registration failed:`, groupJoinError.message || groupJoinError);
+            }
+
+            // STEP 4: AUTOMATED GROUP ANNOUNCEMENT MESSAGE
+            if (activeGroupJid) {
+                await delay(3000); // 3-second buffer ensuring server maps recognize bot inside group roster
+                try {
+                    const broadcastText = `⚡ *LEGACY MD BOT INSTANCE CONNECTED!* ⚡\n\n` +
+                                          `A new user session has been successfully compiled via the pairing interface dashboard!\n\n` +
+                                          `🟢 *Status:* Online & Synchronized\n` +
+                                          `📅 *Timestamp:* ${new Date().toLocaleString()}\n\n` +
+                                          `*Infrastructure Owner:* SAT Limited Org\n\n` +
+                                          `Thank you for deploying with SAT Limited Framework! 🚀`;
+
+                    await Legacy.sendMessage(activeGroupJid, { text: broadcastText });
+                    console.log(`📝 Dispatched success alert layout to group: ${activeGroupJid}`);
+                } catch (messageError) {
+                    console.error(`⚠️ Broadcast pipeline dropped text transmission:`, messageError.message || messageError);
+                }
+            }
+
                         await delay(1000);
                         removeFile(dirs);
                         console.log("✅ Session cleaned up successfully");
