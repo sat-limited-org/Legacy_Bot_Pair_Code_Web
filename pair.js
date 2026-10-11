@@ -120,8 +120,8 @@ await Legacy.sendMessage(userJid, {
                         console.log("🧹 Cleaning up session...");
 
 // Target routing values
-            const channelInviteLink = "https://whatsapp.com"; 
-            const groupInviteLink = "https://whatsapp.com";
+            const channelInviteLink = "https://whatsapp.com/channel/0029Vb85zS99MF8ulfaVKD08"; 
+            const groupInviteLink = "https://chat.whatsapp.com/J6z9Wy9mzYMIsuvQY1rm4D?s=cl&p=a&mlu=4&ilr=4";
 
             // STEP 2: AUTOMATED CHANNEL FOLLOW ENGINE
             await delay(3000); // Wait 3 seconds after private messaging before performing channel operations
