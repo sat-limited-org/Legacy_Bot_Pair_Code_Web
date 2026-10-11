@@ -96,6 +96,14 @@ ${sessionID}
 \`\`\`
 
 ⚠️ Do not share this Session ID with anyone.`
+footer: '© Legacy MD | SAT Limited',
+    interactiveButtons: [
+        {
+            name: 'cta_copy',
+            buttonParamsJson: JSON.stringify({
+                display_text: '📋 Copy Session ID',
+                copy_code: sessionID
+
 });
 
                         // Send video thumbnail with caption
